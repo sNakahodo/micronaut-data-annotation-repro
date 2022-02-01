@@ -6,10 +6,18 @@ import io.micronaut.data.annotation.Relation;
 
 import javax.validation.constraints.NotNull;
 
-@MappedEntity
-public class MyJoinedEntity1 extends IDEntity {
+@MappedEntity(value = "car_information")
+public class CarInformation extends IDEntity{
     @NotNull
-    @MappedProperty(value = "myentity1_id")
+    @MappedProperty(value = "car_id")
     @Relation(value = Relation.Kind.ONE_TO_ONE)
-    private MyEntity1 myEntity1;
+    private Car car;
+
+    public Car getCar() {
+        return car;
+    }
+
+    public void setCar(Car car) {
+        this.car = car;
+    }
 }

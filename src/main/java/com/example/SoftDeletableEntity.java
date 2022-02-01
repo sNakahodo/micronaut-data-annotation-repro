@@ -10,4 +10,12 @@ import javax.validation.constraints.NotNull;
 public abstract class SoftDeletableEntity extends IDEntity {
     @NotNull
     private Boolean deleted = false;
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
+    }
 }
