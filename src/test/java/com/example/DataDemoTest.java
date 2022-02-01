@@ -1,35 +1,62 @@
 package com.example;
 
-import io.micronaut.context.BeanContext;
-import io.micronaut.data.annotation.Query;
-import io.micronaut.runtime.EmbeddedApplication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import jakarta.inject.Inject;
 
+// TLDR: if we have a table join, the @Where("@.deleted = false") is not generated in the query.
+// Person represents the setup with an @Join
+// Car represents one without.
 @MicronautTest
 class DataDemoTest {
-
     @Inject
-    EmbeddedApplication<?> application;
-
+    private PersonRepository personRepository;
     @Inject
-    BeanContext beanContext;
+    private PersonInformationRepository personInformationRepository;
+    @Inject
+    private CarRepository carRepository;
+    @Inject private CarInformationRepository carInformationRepository;
 
     @Test
-    void testItWorks() {
-        Assertions.assertTrue(application.isRunning());
+    void shouldRetrieveNonDeletedPerson() {
+        Person person = new Person();
+        person.setId(4476L);
+        person.setDeleted(false);
+        Person savedPerson = personRepository.save(person);
+        Assertions.assertTrue(personRepository.findById(savedPerson.getId()).isPresent());
     }
 
+    // @HERE: This should not return a present value as we have @where deleted false.
     @Test
-    void testAnnotationGeneratesDeleteFilter() {
-        String query1 = beanContext.getBeanDefinition(MyRepository1.class).getRequiredMethod("findById", Long.class).getAnnotationMetadata().stringValue(Query.class).orElse(null);
-        String query2 = beanContext.getBeanDefinition(MyRepository2.class).getRequiredMethod("findById", Long.class).getAnnotationMetadata().stringValue(Query.class).orElse(null);
-
-        Assertions.assertEquals("SELECT m1_ FROM com.example.MyEntity1 AS m1_ LEFT JOIN FETCH m1_.myJoinedEntity1 j1_ WHERE (m1_.id = :p1 AND (m1_.deleted = false))", query1);
-        Assertions.assertEquals("SELECT m2_ FROM com.example.MyEntity2 AS m2_ LEFT JOIN FETCH m2_.myJoinedEntity2 j2_ WHERE (m2_.id = :p1 AND (m2_.deleted = false))", query2);
+    void shouldNotRetrieveDeletedPerson() {
+        Person person = new Person();
+        person.setId(5727L);
+        person.setDeleted(true);
+        Person savedPerson = personRepository.save(person);
+        Assertions.assertFalse(personRepository.findById(savedPerson.getId()).isPresent());
     }
 
+    /*
+     * Take the example of the Car repository where CarRepository has no join definition.
+     */
+    @Test
+    void shouldRetrieveNonDeletedCar() {
+        Car car = new Car();
+        car.setId(8765L);
+        car.setDeleted(false);
+        Car savedCar = carRepository.save(car);
+        Assertions.assertTrue(carRepository.findById(car.getId()).isPresent());
+    }
+
+    // @HERE: Notice how this correctly does not return a value.
+    @Test
+    void shouldNotRetrieveDeletedCar() {
+        Car car = new Car();
+        car.setId(4163L);
+        car.setDeleted(true);
+        Car savedCar = carRepository.save(car);
+        Assertions.assertFalse(carRepository.findById(car.getId()).isPresent());
+    }
 }
